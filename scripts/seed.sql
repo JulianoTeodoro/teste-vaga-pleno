@@ -6,6 +6,7 @@ drop table if exists "public"."fatura_veiculo" cascade;
 drop table if exists "public"."fatura" cascade;
 drop table if exists "public"."veiculo" cascade;
 drop table if exists "public"."cliente" cascade;
+drop table if exists "public"."vigenciaveiculo" cascade;
 
 create table "public"."cliente"(
   id uuid primary key default uuid_generate_v4(),
@@ -16,6 +17,8 @@ create table "public"."cliente"(
   valor_mensalidade numeric(12,2),
   data_inclusao timestamp not null default now()
 );
+
+create unique index ux_cliente_nome_telefone on "public"."cliente"(nome, telefone);
 
 create table "public"."veiculo"(
   id uuid primary key default uuid_generate_v4(),
@@ -43,6 +46,14 @@ create table "public"."fatura_veiculo"(
   primary key (fatura_id, veiculo_id)
 );
 
+create table "public"."cliente_veiculo_vigencia"(
+  id uuid primary key default uuid_generate_v4(),
+  cliente_id uuid not null references "public"."cliente"(id),
+  veiculo_id uuid not null references "public"."veiculo"(id),
+  data_inicio timestamp not null,
+  data_fim timestamp
+);
+
 -- Clientes
 insert into "public"."cliente"(id, nome, telefone, endereco, mensalista, valor_mensalidade) values
   ('11111111-1111-1111-1111-111111111111','João Souza','31999990001','Rua A, 123',true,189.90),
@@ -68,3 +79,14 @@ update "public"."veiculo" set cliente_id='22222222-2222-2222-2222-222222222222'
 where placa='ABC1D23';
 update "public"."veiculo" set data_inclusao='2025-08-18' where placa='ABC1D23';
 -- BUG atual de faturamento usa o dono ATUAL (Maria) para competência 2025-08; candidato deve corrigir para foto na data de corte.
+
+insert into "public"."cliente_veiculo_vigencia"(id, cliente_id, veiculo_id, data_inicio, data_fim) values
+  ('66666666-6666-6666-6666-666666666661','11111111-1111-1111-1111-111111111111','aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1','2025-07-10 00:00:00', null),
+  ('66666666-6666-6666-6666-666666666662','22222222-2222-2222-2222-222222222222','aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2','2025-07-15 00:00:00', null),
+  ('66666666-6666-6666-6666-666666666663','11111111-1111-1111-1111-111111111111','aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3','2025-08-01 00:00:00','2025-08-18 00:00:00'),
+  ('66666666-6666-6666-6666-666666666664','22222222-2222-2222-2222-222222222222','aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3','2025-08-18 00:00:00', null),
+  ('66666666-6666-6666-6666-666666666665','33333333-3333-3333-3333-333333333333','aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa4','2025-07-20 00:00:00', null),
+  ('66666666-6666-6666-6666-666666666666','33333333-3333-3333-3333-333333333333','aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa5','2025-08-05 00:00:00', null),
+  ('66666666-6666-6666-6666-666666666667','55555555-5555-5555-5555-555555555555','aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa6','2025-07-01 00:00:00', null),
+  ('66666666-6666-6666-6666-666666666668','55555555-5555-5555-5555-555555555555','aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa7','2025-08-20 00:00:00', null),
+  ('66666666-6666-6666-6666-666666666669','22222222-2222-2222-2222-222222222222','aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa8','2025-07-01 00:00:00', null);

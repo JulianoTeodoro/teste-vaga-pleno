@@ -14,5 +14,7 @@ namespace Parking.Api.Models
 
         [Required] public Guid ClienteId { get; set; }
         public Cliente? Cliente { get; set; }
+        public List<ClienteVeiculoVigencia> ClienteVeiculoVigencias { get; set; } = new();
+
     }
 }

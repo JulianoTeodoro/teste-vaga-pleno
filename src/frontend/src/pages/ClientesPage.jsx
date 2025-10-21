@@ -19,7 +19,6 @@ export default function ClientesPage(){
     } else if (type === 'number') {
       newValue = value === '' ? '' : Number(value);
     } else if (e.target.tagName === 'SELECT' || type === 'select-one') {
-      // converte strings "true"/"false" em booleanos quando fizer sentido
       if (value === 'true') newValue = true;
       else if (value === 'false') newValue = false;
       else newValue = value;
@@ -43,7 +42,6 @@ export default function ClientesPage(){
 
   function handleSubmit(e) {
     e.preventDefault();
-    console.log(formEditar);
     edit.mutate({
       ...formEditar
     });

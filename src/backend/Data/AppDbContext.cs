@@ -12,6 +12,7 @@ namespace Parking.Api.Data
         public DbSet<Veiculo> Veiculos => Set<Veiculo>();
         public DbSet<Fatura> Faturas => Set<Fatura>();
         public DbSet<FaturaVeiculo> FaturasVeiculos => Set<FaturaVeiculo>();
+        public DbSet<ClienteVeiculoVigencia> ClienteVeiculoVigencias => Set<ClienteVeiculoVigencia>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -25,10 +26,10 @@ namespace Parking.Api.Data
                 e.Property(x => x.Nome).HasColumnName("nome").IsRequired().HasMaxLength(200);
                 e.Property(x => x.Telefone).HasColumnName("telefone").HasMaxLength(20);
                 e.Property(x => x.Endereco).HasColumnName("endereco").HasMaxLength(400);
-                e.Property(x => x.Mensalista).HasColumnName("mensalista");
+                e.Property(x => x.Mensalista).HasColumnName("mensalista").IsRequired();
                 e.Property(x => x.ValorMensalidade).HasColumnName("valor_mensalidade");
-                e.Property(x => x.DataInclusao).HasColumnName("data_inclusao");
-                e.HasIndex(x => new { x.Nome, x.Telefone }).IsUnique(false);
+                e.Property(x => x.DataInclusao).HasColumnName("data_inclusao").IsRequired();
+                e.HasIndex(x => new { x.Nome, x.Telefone }).IsUnique();
                 e.HasMany(x => x.Veiculos).WithOne(x => x.Cliente!).HasForeignKey(x => x.ClienteId);
             });
 
@@ -55,7 +56,7 @@ namespace Parking.Api.Data
                 e.Property(x => x.Valor).HasColumnName("valor");
                 e.Property(x => x.CriadaEm).HasColumnName("criada_em");
                 e.Property(x => x.Observacao).HasColumnName("observacao");
-                e.HasMany(x => x.Veiculos).WithOne().HasForeignKey(x => x.FaturaId);
+                e.HasMany(x => x.Veiculos).WithOne().HasForeignKey(x => x.FaturaId).HasConstraintName("fatura_cliente_id_fkey");
                 e.HasIndex(x => new { x.ClienteId, x.Competencia }).IsUnique();
             });
 
@@ -65,6 +66,20 @@ namespace Parking.Api.Data
                 e.HasKey(x => new { x.FaturaId, x.VeiculoId });
                 e.Property(x => x.FaturaId).HasColumnName("fatura_id");
                 e.Property(x => x.VeiculoId).HasColumnName("veiculo_id");
+            });
+
+            modelBuilder.Entity<ClienteVeiculoVigencia>(e =>
+            {
+                e.ToTable("cliente_veiculo_vigencia");
+                e.HasKey(x => x.Id);
+                e.Property(x => x.Id).HasColumnName("id");
+                e.Property(x => x.ClienteId).HasColumnName("cliente_id").IsRequired();
+                e.Property(x => x.VeiculoId).HasColumnName("veiculo_id").IsRequired();
+                e.Property(x => x.DtInicio).HasColumnName("data_inicio").IsRequired();
+                e.Property(x => x.DtFim).HasColumnName("data_fim");
+                e.HasOne(x => x.Cliente).WithMany(x => x.ClienteVeiculoVigencias).HasForeignKey(x => x.ClienteId).HasConstraintName("clienteveiculovigencia_cliente_id_fkey");
+                e.HasOne(x => x.Veiculo).WithMany(x => x.ClienteVeiculoVigencias).HasForeignKey(x => x.VeiculoId).HasConstraintName("clienteveiculovigencia_veiculo_id_fkey");
+
             });
         }
     }

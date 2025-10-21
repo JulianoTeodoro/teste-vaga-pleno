@@ -8,18 +8,38 @@ export default function VeiculosPage(){
   const clientes = useQuery({ queryKey:['clientes-mini'], queryFn:() => apiGet('/api/clientes?pagina=1&tamanho=100') })
   const veiculos = useQuery({ queryKey:['veiculos', clienteId], queryFn:() => apiGet(`/api/veiculos${clienteId?`?clienteId=${clienteId}`:''}`) })
   const [form, setForm] = useState({ placa:'', modelo:'', ano:'', clienteId:'' })
+  const [editarForm, setEditarForm] = useState({ placa:'', modelo:'', ano:'', clienteId:'' })
+  const [editar, setEditar] = useState(false)
 
   const create = useMutation({
     mutationFn: (data) => apiPost('/api/veiculos', data),
-    onSuccess: () => qc.invalidateQueries({ queryKey:['veiculos'] })
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey:['veiculos'] });
+      alert("Veículo criado com sucesso!");
+    },
+    onError: (error) => {
+      alert("Erro ao criar veículo: " + error.message);
+    }
   })
   const update = useMutation({
     mutationFn: ({id, data}) => apiPut(`/api/veiculos/${id}`, data),
-    onSuccess: () => qc.invalidateQueries({ queryKey:['veiculos'] })
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey:['veiculos'] });
+      alert("Veículo atualizado com sucesso!");
+    },
+    onError: (error) => {
+      alert("Erro ao atualizar veículo: " + error.message);
+    }
   })
   const remover = useMutation({
     mutationFn: (id) => apiDelete(`/api/veiculos/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey:['veiculos'] })
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey:['veiculos'] });
+      alert("Veículo removido com sucesso!");
+    },
+    onError: (error) => {
+      alert("Erro ao remover veículo: " + error.message);
+    }
   })
 
   useEffect(()=>{
@@ -67,11 +87,7 @@ export default function VeiculosPage(){
                   <td>{v.ano ?? '-'}</td>
                   <td>{v.clienteId}</td>
                   <td style={{display:'flex', gap:8}}>
-                    <button className="btn-ghost" onClick={()=>{
-                      const novoModelo = prompt('Novo modelo', v.modelo || '')
-                      if(novoModelo===null) return
-                      // TODO: trocar cliente via select modal (deixo simples aqui)
-                      update.mutate({ id: v.id, data:{ placa: v.placa, modelo: novoModelo, ano: v.ano, clienteId } })
+                    <button className="btn-ghost" onClick={()=>{ setEditarForm(v); setEditar(true);
                     }}>Editar</button>
                     <button className="btn-ghost" onClick={()=>remover.mutate(v.id)}>Excluir</button>
                   </td>
@@ -80,8 +96,78 @@ export default function VeiculosPage(){
             </tbody>
           </table>
         )}
+        
         <p className="note">TODO: permitir troca de cliente na edição e garantir atualização sem recarregar a página (React Query já invalida a lista).</p>
       </div>
-    </div>
+      {editar && (
+        <div className="modal">
+          <div
+            className="modal-content"
+            style={{
+              width: 600,
+              maxWidth: '95%',
+              padding: 20,
+              boxSizing: 'border-box',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 12
+            }}
+          >
+            <h3>Editar Veículo</h3>
+
+            {/* campos empilhados um abaixo do outro */}
+            <div style={{display:'flex', flexDirection:'column', gap:10}}>
+              <label style={{fontSize:12}}>Placa</label>
+              <input
+                placeholder="Placa"
+                value={editarForm.placa}
+                onChange={e => setEditarForm({ ...editarForm, placa: e.target.value })}
+              />
+
+              <label style={{fontSize:12}}>Modelo</label>
+              <input
+                placeholder="Modelo"
+                value={editarForm.modelo}
+                onChange={e => setEditarForm({ ...editarForm, modelo: e.target.value })}
+              />
+
+              <label style={{fontSize:12}}>Ano</label>
+              <input
+                placeholder="Ano"
+                value={editarForm.ano ?? ''}
+                onChange={e => setEditarForm({ ...editarForm, ano: e.target.value })}
+              />
+
+              <label style={{fontSize:12}}>Cliente</label>
+              <select
+                value={editarForm.clienteId ?? clienteId}
+                onChange={e => setEditarForm({ ...editarForm, clienteId: e.target.value })}
+              >
+                {clientes.data?.itens?.map(c => (
+                  <option key={c.id} value={c.id}>{c.nome}</option>
+                ))}
+              </select>
+
+              <div style={{display:'flex', gap:8, marginTop:6}}>
+                <button
+                  onClick={() => {
+                    update.mutate({ id: editarForm.id, data: {
+                      placa: editarForm.placa,
+                      modelo: editarForm.modelo,
+                      ano: editarForm.ano ? Number(editarForm.ano) : null,
+                      clienteId: editarForm.clienteId ?? clienteId
+                    } });
+                    setEditar(false);
+                  }}
+                  >
+                      Salvar
+                      </button>
+                      <button onClick={()=>setEditar(false)}>Cancelar</button>
+                    </div>
+                  </div>
+              </div>
+          </div>
+          )}
+      </div>
   )
 }

@@ -33,8 +33,18 @@ namespace Parking.Api.Controllers
             if (await _db.Veiculos.AnyAsync(v => v.Placa == placa)) return Conflict("Placa já existe.");
 
             var v = new Veiculo { Placa = placa, Modelo = dto.Modelo, Ano = dto.Ano, ClienteId = dto.ClienteId };
-            _db.Veiculos.Add(v);
+
+            var vigencia = new ClienteVeiculoVigencia
+            {
+                ClienteId = dto.ClienteId,
+                VeiculoId = v.Id,
+                DtInicio = DateTime.Now,
+            };
+
+            await _db.Veiculos.AddAsync(v);
+            await _db.ClienteVeiculoVigencias.AddAsync(vigencia);
             await _db.SaveChangesAsync();
+
             return CreatedAtAction(nameof(GetById), new { id = v.Id }, v);
         }
 
@@ -58,7 +68,24 @@ namespace Parking.Api.Controllers
             v.Placa = placa;
             v.Modelo = dto.Modelo;
             v.Ano = dto.Ano;
-            v.ClienteId = dto.ClienteId; // troca de cliente permitida
+
+            if (!v.ClienteId.Equals(dto.ClienteId))
+            {
+                v.ClienteId = dto.ClienteId;
+                var vigenciaAtual = await _db.ClienteVeiculoVigencias.FirstOrDefaultAsync(p => p.ClienteId == v.ClienteId && p.VeiculoId == id && p.DtFim == null);
+
+                if(vigenciaAtual != null)
+                {
+                    vigenciaAtual.DtFim = DateTime.Now;
+                }
+
+                await _db.ClienteVeiculoVigencias.AddAsync(new ClienteVeiculoVigencia
+                {
+                    ClienteId = dto.ClienteId,
+                    VeiculoId = id,
+                    DtInicio = DateTime.Now,
+                });
+            }
             await _db.SaveChangesAsync();
             return Ok(v);
         }

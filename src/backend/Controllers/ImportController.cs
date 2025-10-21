@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Parking.Api.Data;
+using Parking.Api.Dtos;
 using Parking.Api.Models;
 using Parking.Api.Services;
 using System.Text;
@@ -17,24 +18,27 @@ namespace Parking.Api.Controllers
         public ImportController(AppDbContext db, PlacaService placa) { _db = db; _placa = placa; }
 
         [HttpPost("csv")]
-        public async Task<IActionResult> ImportCsv()
+        public async Task<ActionResult<ImportacaoResponse>> ImportCsv([FromBody] ImportarCsv importacao)
         {
-            if (!Request.HasFormContentType || Request.Form.Files.Count == 0)
-                return BadRequest("Envie um arquivo CSV no campo 'file'.");
+            if (string.IsNullOrEmpty(importacao.base64))
+                return BadRequest("Arquivo invalido.");
 
-            var file = Request.Form.Files[0];
-            using var s = file.OpenReadStream();
+            var importacaoResponse = new ImportacaoResponse();
+
+            byte[] bytes = Convert.FromBase64String(importacao.base64);
+
+            using var s = new MemoryStream(bytes);
             using var r = new StreamReader(s, Encoding.UTF8);
 
-            int linha = 0, processados = 0, inseridos = 0;
-            var erros = new List<string>();
-            string? header = await r.ReadLineAsync(); // consome cabeçalho
+            var linha = 0;
+
+            string? header = await r.ReadLineAsync(); 
             while (!r.EndOfStream)
             {
                 linha++;
                 var raw = await r.ReadLineAsync();
                 if (string.IsNullOrWhiteSpace(raw)) continue;
-                processados++;
+                importacaoResponse.QtProcessados++;
 
                 // CSV simples separado por vírgula: placa,modelo,ano,cliente_identificador,cliente_nome,cliente_telefone,cliente_endereco,mensalista,valor_mensalidade
                 var cols = raw.Split(',');
@@ -50,8 +54,8 @@ namespace Parking.Api.Controllers
                     bool mensalista = bool.TryParse(cols[7], out var m) && m;
                     decimal? valorMens = decimal.TryParse(cols[8], out var vm) ? vm : null;
 
-                    if (!_placa.EhValida(placa)) throw new Exception("Placa inválida");
-                    if (await _db.Veiculos.AnyAsync(v => v.Placa == placa)) throw new Exception("Placa duplicada");
+                    if (!_placa.EhValida(placa)) throw new Exception("Placa inválida para importação.");
+                    if (await _db.Veiculos.AnyAsync(v => v.Placa == placa)) throw new Exception("Placa duplicada.");
 
                     var cliente = await _db.Clientes.FirstOrDefaultAsync(c => c.Nome == cliNome && c.Telefone == cliTel);
                     if (cliente == null)
@@ -64,15 +68,22 @@ namespace Parking.Api.Controllers
                     var v = new Veiculo { Placa = placa, Modelo = modelo, Ano = ano, ClienteId = cliente.Id };
                     _db.Veiculos.Add(v);
                     await _db.SaveChangesAsync();
-                    inseridos++;
+                    importacaoResponse.QtInseridos++;
                 }
                 catch (Exception ex)
                 {
-                    erros.Add($"Linha {linha}: {ex.Message} (raw='{raw}')");
+                    importacaoResponse.Erros.Add(
+                        new UnidadeErrorCsv
+                        {
+                            Erro = $"{ex.Message} (Conteudo = '{raw}')",
+                            Linha = linha
+                        }
+                    );
+                    importacaoResponse.QtErros++;
                 }
             }
 
-            return Ok(new { processados, inseridos, erros });
+            return Ok(importacaoResponse);
         }
     }
 }

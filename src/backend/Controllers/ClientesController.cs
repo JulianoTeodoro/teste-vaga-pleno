@@ -64,7 +64,7 @@ namespace Parking.Api.Controllers
             var c = await _db.Clientes.FindAsync(id);
             if (c == null) return NotFound("Cliente não cadastrado!!");
 
-            var existe = await _db.Clientes.AnyAsync(c => c.Nome == dto.Nome && c.Telefone == dto.Telefone);
+            var existe = await _db.Clientes.AnyAsync(c => c.Id != id && c.Nome == dto.Nome && c.Telefone == dto.Telefone);
             if (existe) return Conflict("Cliente já existente .");
 
             c.Nome = dto.Nome;
