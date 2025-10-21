@@ -75,6 +75,69 @@ export default function ClientesPage(){
     onSuccess: () => qc.invalidateQueries({ queryKey:['clientes'] })
   })
 
+  const edicaoComponent = (
+    <div className="max-w-md mx-auto p-6 bg-white rounded-2xl shadow">
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <input
+                      type="text"
+                      placeholder="Nome"
+                      name="nome"
+                      value={formEditar.nome}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <input
+                      type="text"
+                      name="endereco"
+                      placeholder="Endereco"
+                      value={formEditar.endereco}
+                      onChange={handleChange}
+                    />
+                  </div>
+
+                  <div>
+                    <input
+                      type="tel"
+                      name="telefone"
+                      placeholder="Telefone"
+                      value={formEditar.telefone}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <select name="mensalista" value={formEditar.mensalista} onChange={handleChange} placeholder="Mensalista">
+                      <option value="true">Sim</option>
+                      <option value="false">Não</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <input
+                    name="valorMensalidade"
+                      type="number"
+                      placeholder="Valor da Mensalidade"
+                      value={Number(formEditar.valorMensalidade) ?? 0}
+                      min="0"
+                      step="0.01"
+                      onChange={handleChange}
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="botao-editar"
+                  >
+                    Enviar
+                  </button>
+                </form>
+              </div>
+  )
+
   return (
     <div>
       <h2>Clientes</h2>
@@ -137,66 +200,7 @@ export default function ClientesPage(){
       {editar && <h3>Editar Cliente</h3>}
       <div className="section">
         {editar && 
-              <div className="max-w-md mx-auto p-6 bg-white rounded-2xl shadow">
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <input
-                      type="text"
-                      placeholder="Nome"
-                      name="nome"
-                      value={formEditar.nome}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <input
-                      type="text"
-                      name="endereco"
-                      placeholder="Endereco"
-                      value={formEditar.endereco}
-                      onChange={handleChange}
-                    />
-                  </div>
-
-                  <div>
-                    <input
-                      type="tel"
-                      name="telefone"
-                      placeholder="Telefone"
-                      value={formEditar.telefone}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <select name="mensalista" value={formEditar.mensalista} onChange={handleChange} placeholder="Mensalista">
-                      <option value="true">Sim</option>
-                      <option value="false">Não</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <input
-                    name="valorMensalidade"
-                      type="number"
-                      placeholder="Valor da Mensalidade"
-                      value={Number(formEditar.valorMensalidade) ?? 0}
-                      min="0"
-                      step="0.01"
-                      onChange={handleChange}
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="botao-editar"
-                  >
-                    Enviar
-                  </button>
-                </form>
-              </div>
+              edicaoComponent
 
         }
       </div>
