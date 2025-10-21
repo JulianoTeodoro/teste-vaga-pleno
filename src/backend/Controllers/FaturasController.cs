@@ -13,9 +13,8 @@ namespace Parking.Api.Controllers
     [Route("api/[controller]")]
     public class FaturasController : ControllerBase
     {
-        private readonly AppDbContext _db;
         private readonly IFaturamentoBusiness _fat;
-        public FaturasController(AppDbContext db, IFaturamentoBusiness fat) { _db = db; _fat = fat; }
+        public FaturasController(IFaturamentoBusiness fat) { _fat = fat; }
 
         [HttpPost("gerar")]
         public async Task<IActionResult> Gerar([FromBody] GerarFaturaRequest req, CancellationToken ct)
@@ -27,25 +26,14 @@ namespace Parking.Api.Controllers
         [HttpGet]
         public async Task<IActionResult> List([FromQuery] string? competencia = null)
         {
-            var q = _db.Faturas.AsQueryable();
-            if (!string.IsNullOrWhiteSpace(competencia)) q = q.Where(f => f.Competencia == competencia);
-            var list = await q
-                .OrderByDescending(f => f.CriadaEm)
-                .Select(f => new {
-                    f.Id, f.Competencia, f.ClienteId, f.Valor, f.CriadaEm,
-                    qtdVeiculos = _db.FaturasVeiculos.Count(x => x.FaturaId == f.Id)
-                })
-                .ToListAsync();
-            return Ok(list);
+            var lista = await _fat.ListAsync(competencia);
+            return Ok(lista);
         }
 
         [HttpGet("{id:guid}/placas")]
         public async Task<IActionResult> Placas(Guid id)
         {
-            var placas = await _db.FaturasVeiculos
-                .Where(x => x.FaturaId == id)
-                .Join(_db.Veiculos, fv => fv.VeiculoId, v => v.Id, (fv, v) => v.Placa)
-                .ToListAsync();
+            var placas = await _fat.GetPlacas(id);
             return Ok(placas);
         }
     }

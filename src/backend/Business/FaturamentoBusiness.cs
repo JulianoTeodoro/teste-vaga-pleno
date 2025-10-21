@@ -25,6 +25,16 @@ namespace Parking.Api.Business
             _clienteVeiculoVigenciaEFRepository = clienteVeiculoVigenciaEFRepository;
         }
 
+        public async Task<List<string>> GetPlacas(Guid faturaId)
+        {
+            return await _faturaEFRepository.GetPlacas(faturaId);
+        }
+
+        public async Task<List<FaturaDto>> ListAsync(string competencia)
+        {
+            return await _faturaEFRepository.List(competencia);
+        }
+
         public async Task<List<Fatura>> GerarAsync(string competencia, CancellationToken ct = default)
         {
             // competencia formato yyyy-MM

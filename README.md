@@ -1,7 +1,7 @@
 ## Documentação técnica das atividades solicitadas no teste.
 
 
-As funcionalidades foram em .NET 8 no back-end e React com React Query no front-end para controle de estado assíncrono, garantindo sincronização com o backend e experiência fluida ao usuário.
+As funcionalidades foram desenvolvidas em .NET 8 no back-end e React com React Query no front-end para controle de estado assíncrono, garantindo sincronização com o backend e experiência fluida ao usuário.
 
 ### Tarefa 1 : Completar a Tela de Cliente
 
@@ -190,7 +190,159 @@ Feedback Visual e UX: Mensagens de sucesso e erro são exibidas com alertas desc
 
 ### Tarefa 3 : Melhorar Upload CSV
 
+Contexto: Anteriormente, a API realizava a importação de arquivos CSV diretamente na controller, com o arquivo sendo enviado via form-data (upload direto de arquivo).
+Essa abordagem tornava a controller responsável por múltiplas responsabilidades — tratamento de arquivo, lógica de negócio e retorno de resultados — o que dificultava manutenção, testes unitários e reaproveitamento de código.
+
+Com essa entrega será possivel enviar o CSV em base64 dentro do corpo da requisição, facilitando a integração.
+
+#### Back-End
+
+🚀 Endpoint
+POST /api/import/csv
+
+Realiza a importação de veiculos e clientes.
+
+```
+{
+  "base64":"cGxhY2EsbW9kZWxvLGFubyxjbGllbnRlX2lkZW50aWZpY2Fkb3IsY2xpZW50ZV9ub21lLGNsaWVudGVfdGVsZWZvbmUsY2xpZW50ZV9lbmRlcmVjbyxtZW5zYWxpc3RhLHZhbG9yX21lbnNhbGlkYWRlDQpCUkExQTIzLEdvbCwyMDE5LENMSS0wMDEsSm/Do28gU291emEsMzEgOTk5OTktMDAwMSwiUnVhIEEsIDEyMyIsdHJ1ZSwxODkuOTANClJDSDJCNDUsT25peCwyMDIwLENMSS0wMDIsTWFyaWEgTGltYSwzMSA5ODg4OC0wMDAyLCJBdi4gQiwgNDU2IixmYWxzZSwNCkFCQzFEMjMsSEIyMCwyMDE4LENMSS0wMDEsSm/Do28gU291emEsMzEgOTk5OTktMDAwMSwiUnVhIEEsIDEyMyIsdHJ1ZSwxODkuOTANCkFBQS0xMTExLFVubywyMDE1LENMSS0wMDMsQ2FybG9zIFNpbHZhLCgzMSkgOTc3NzctMDAwMywiUnVhIEMsIDc4OSIsdHJ1ZSwxNTkuOTANCklOVi1YWFhYLENhcnJvLDIwMjAsQ0xJLTAwNCxFcnJvIFBsYWNhLDMxIDk2NjY2LTAwMDQsIlJ1YSBYLCAwMDAiLHRydWUsMTIwLjAwDQpCUkExQTIzLEdvbCwyMDE5LENMSS0wMDEsRHVwbGljYWRhLDMxIDk1NTU1LTAwMDUsIlJ1YSBEdXAsIDEyIix0cnVlLDEwMC4wMA0K"
+}
+
+```
+🔹 Respostas possíveis
+
+| Codigo | Tipo | Descrição |
+|:-----------:|:------------|------------:|
+| 200    | OK    | Importado com sucesso.    |
+| 400  | BadRequest  | Placa inválida. / Placa inválida para importação. / Arquivo invalido. |
+
+````
+{
+  "qtProcessados": 6,
+  "qtInseridos": 6,
+  "qtErros": 0,
+  "erros": []
+}
+````
+
+
+Decisões Tecnicas: 
+
+```` 
+
+Segregação de responsabilidades por camadas (Controller, Business, Repository): Foi adotada uma arquitetura em camadas, seguindo o padrão Clean Architecture / DDD simplificado, evitando duplicação de lógica e mantém o código mais fácil de testar e evoluir.
+
+Validação e normalização de placa: Foi utilizado o serviço _placa para sanitizar (remover espaços e formatações) e validar o padrão da placa antes de qualquer operação de banco. Essa decisão previne inconsistências de formato e duplicidades lógicas no cadastro de veículos.
+
+Formato de upload: Envio em base64 dentro do corpo (ImportarCsv.base64), com objetivo de facilitar envio via JSON, integrações automatizadas e elimina necessidade de multipart/form-data.
+
+Processamento do CSV: Uso de StreamReader com MemoryStream para decodificar base64, evitando gravação temporária em disco e melhora performance.
+
+Controle de erros	Try/catch linha a linha: o registro de exceções específicas permite continuar o processamento mesmo com linhas inválidas.
+
+Estrutura de retorno: Novo objeto ImportacaoResponse com lista detalhada de erros aumenta a rastreabilidade e melhora a experiência do usuário final.
+
+```` 
+
+#### Front-End
+
+##### Principais responsabilidades:
+Adaptar o envio do arquivo CSV para o novo formato base64.
+Linhas e mensagens de erro detalhadas.
+Melhorar a usabilidade e experiência visual da tela de importação.
+
+Decisões Tecnicas: 
+
+```` 
+
+Formato de envio: Conversão do arquivo para Base64 e envio via JSON (application/json), compatibilidade com o novo padrão da API e facilidade de integração entre sistemas.
+Leitura de arquivo: Uso do FileReader para conversão local, evitando upload físico de arquivo e torna o processo mais rápido e seguro.
+Renderização de resultado: exibição de campos separados (processados, inseridos, erros), melhora a clareza das informações exibidas.
+Listagem de erros: Renderização de cada erro em um card visual (linha + motivo), facilitando identificação de falhas e depuração do CSV.
+
+```` 
+
+
 ### Tarefa 4 : Faturamento Parcial
+
+Contexto: Anteriormente, a API associava cada veículo a apenas um único cliente “dono”, sem controle histórico de trocas de titularidade.
+Com isso, o faturamento mensal considerava apenas o cliente atual do veículo, sem levar em conta mudanças de cliente no meio do mês.
+
+Consequentemente:
+
+O cliente antigo pagava o mês inteiro, mesmo tendo ficado com o veículo apenas parte dele. O novo cliente não era faturado proporcionalmente ao período em que assumiu o veículo.
+
+Para resolver isso, foi criada a tabela ClienteVeiculoVigencia, responsável por registrar a vigência da relação entre cliente e veículo, com data de início e término.
+
+Essa estrutura permitiu implementar regras de faturamento proporcional, de modo que a fatura mensal refletisse somente os dias em que o veículo esteve vinculado ao cliente.
+
+#### SQL
+
+##### Tabela criada: 
+````
+create table "public"."cliente_veiculo_vigencia"(
+  id uuid primary key default uuid_generate_v4(),
+  cliente_id uuid not null references "public"."cliente"(id),
+  veiculo_id uuid not null references "public"."veiculo"(id),
+  data_inicio timestamp not null,
+  data_fim timestamp
+);
+````
+
+
+#### Back-End
+
+🧩 Nova Estrutura de Dados
+
+```` 
+public class ClienteVeiculoVigencia
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+
+    [Required]
+    public Guid ClienteId { get; set; }
+    [JsonIgnore]
+    public Cliente Cliente { get; set; }
+
+    [Required]
+    public Guid VeiculoId { get; set; }
+    [JsonIgnore]
+    public Veiculo Veiculo { get; set; }
+
+    [Required]
+    public DateTime DtInicio { get; set; }
+    public DateTime? DtFim { get; set; }
+}
+```` 
+
+
+Decisões Tecnicas: 
+
+```` 
+Persistência de histórico de vigências: 
+Implementada a entidade ClienteVeiculoVigencia e respectivo repositório EF, e foi criada nova tabela no banco Postgres.
+Sempre que um veículo muda de cliente, a vigência anterior é encerrada (DtFim = DateTime.Now) e uma nova é criada (DtInicio = DateTime.Now).
+
+Segregação de responsabilidades por camadas (Controller, Business, Repository): Foi adotada uma arquitetura em camadas, seguindo o padrão Clean Architecture / DDD simplificado, evitando duplicação de lógica e mantém o código mais fácil de testar e evoluir.
+
+Cálculo proporcional: Determina os dias efetivos de vigência dentro do mês da competência (DtInicio e DtFim comparados com o intervalo do mês).
+
+O valor proporcional é calculado por: 
+    valorProporcional += valorMensal * diasAtivos / totalDiasMes;
+O valor é arredondado para duas casas decimais.
+
+Idempotência: Antes de gerar uma nova fatura, o sistema verifica se já existe fatura para aquele cliente e competência.
+
+Relacionamento Fatura-Veículo: Cada fatura contém todos os veículos ativos do cliente durante o período, garantindo rastreabilidade do faturamento.
+
+Mensagens de observação: A fatura inclui observação padrão informando que foi gerada com sucesso, incluindo o total de dias faturados.
+
+```` 
+
+#### Front-End
+
+##### Principais responsabilidades:
+
+Não houve alteração no front-end.
 
 ----------------------------------------------------------
 ### Stack de Referência
