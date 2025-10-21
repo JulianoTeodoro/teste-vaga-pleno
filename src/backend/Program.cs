@@ -1,7 +1,11 @@
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using Parking.Api.Business;
 using Parking.Api.Data;
+using Parking.Api.Data.Repositories;
+using Parking.Api.Interfaces.Business;
+using Parking.Api.Interfaces.Repositories;
 using Parking.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,7 +20,18 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
 });
 
 builder.Services.AddScoped<PlacaService>();
-builder.Services.AddScoped<FaturamentoService>();
+
+// Business
+builder.Services.AddScoped<IClienteBusiness, ClienteBusiness>();
+builder.Services.AddScoped<IVeiculosBusiness, VeiculosBusiness>();
+builder.Services.AddScoped<IFaturamentoBusiness, FaturamentoBusiness>();
+
+// Repositories
+builder.Services.AddScoped<IClienteEFRepository, ClienteEFRepository>();
+builder.Services.AddScoped<IVeiculosEFRepository, VeiculosEFRepository>();
+builder.Services.AddScoped<IFaturaEFRepository, FaturaEFRepository>();
+builder.Services.AddScoped<IFaturaVeiculoEFRepository, FaturaVeiculoEFRepository>();
+builder.Services.AddScoped<IClienteVeiculoVigenciaEFRepository, ClienteVeiculoVigenciaEFRepository>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

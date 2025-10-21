@@ -11,7 +11,7 @@ namespace Parking.Api.Models
         [MaxLength(400)] public string? Endereco { get; set; }
         public bool Mensalista { get; set; }
         public decimal? ValorMensalidade { get; set; }
-        public DateTime DataInclusao { get; set; } = DateTime.UtcNow;
+        public DateTime DataInclusao { get; set; } = DateTime.Now;
 
         public List<Veiculo> Veiculos { get; set; } = new();
         public List<ClienteVeiculoVigencia> ClienteVeiculoVigencias { get; set; } = new();
