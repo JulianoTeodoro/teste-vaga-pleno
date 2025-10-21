@@ -45,7 +45,7 @@ namespace Parking.Api.Controllers
         public async Task<IActionResult> GetById(Guid id)
         {
             var c = await _clienteBusiness.GetById(id);
-            return c == null ? NotFound() : Ok(c);
+            return c == null ? NotFound("Cliente Não Existente. ") : Ok(c);
         }
 
         [HttpPut("{id:guid}")]
@@ -66,7 +66,7 @@ namespace Parking.Api.Controllers
         public async Task<IActionResult> Delete(Guid id)
         {
             var c = await _clienteBusiness.GetById(id);
-            if (c == null) return NotFound();
+            if (c == null) return NotFound("Cliente Não Existente.");
             var temVeiculos = await _veiculosBusiness.AnyAsync(v => v.ClienteId == id);
             if (temVeiculos) return BadRequest("Cliente possui veículos associados. Transfira ou remova antes.");
             await _clienteBusiness.Delete(id);

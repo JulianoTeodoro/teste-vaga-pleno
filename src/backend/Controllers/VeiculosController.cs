@@ -41,7 +41,7 @@ namespace Parking.Api.Controllers
         public async Task<IActionResult> GetById(Guid id)
         {
             var v = await _veiculosBusiness.GetById(id);
-            return v == null ? NotFound() : Ok(v);
+            return v == null ? NotFound("Veiculo Não Existente.") : Ok(v);
         }
 
         // BUG propositado: não invalida/atualiza nada no front; candidato deve ajustar no front (React Query) ou aqui (retornar entidade e orientar)
@@ -49,7 +49,7 @@ namespace Parking.Api.Controllers
         public async Task<IActionResult> Update(Guid id, [FromBody] VeiculoUpdateDto dto)
         {
             var v = await _veiculosBusiness.GetById(id);
-            if (v == null) return NotFound();
+            if (v == null) return NotFound("Veiculo Não Existente.");
             var placa = _placa.Sanitizar(dto.Placa);
             if (!_placa.EhValida(placa)) return BadRequest("Placa inválida.");
             if (await _veiculosBusiness.AnyAsync(x => x.Placa == placa && x.Id != id)) return Conflict("Placa já existe.");
@@ -63,7 +63,7 @@ namespace Parking.Api.Controllers
         public async Task<IActionResult> Delete(Guid id)
         {
             var v = await _veiculosBusiness.GetById(id);
-            if (v == null) return NotFound();
+            if (v == null) return NotFound("Veiculo Não Existente.");
             await _veiculosBusiness.Delete(id);
             return NoContent();
         }
