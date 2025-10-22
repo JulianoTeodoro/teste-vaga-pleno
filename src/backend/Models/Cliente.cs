@@ -1,5 +1,6 @@
 
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace Parking.Api.Models
 {
@@ -13,7 +14,9 @@ namespace Parking.Api.Models
         public decimal? ValorMensalidade { get; set; }
         public DateTime DataInclusao { get; set; } = DateTime.Now;
 
+        [JsonIgnore]
         public List<Veiculo> Veiculos { get; set; } = new();
+        [JsonIgnore]
         public List<ClienteVeiculoVigencia> ClienteVeiculoVigencias { get; set; } = new();
 
     }
